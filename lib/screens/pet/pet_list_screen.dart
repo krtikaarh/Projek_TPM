@@ -13,6 +13,8 @@ class PetListScreen extends StatefulWidget {
 class _PetListScreenState extends State<PetListScreen> {
   List<Pet> pets = [];
   List<dynamic> apiPets = [];
+  bool isLoadingApi = false;
+  String apiError = '';
 
   @override
   void initState() {
@@ -37,6 +39,11 @@ class _PetListScreenState extends State<PetListScreen> {
   }
 
   Future<void> _loadApiPets() async {
+    setState(() {
+      isLoadingApi = true;
+      apiError = '';
+    });
+
     try {
       final response = await http.get(
         Uri.parse('https://6842dfb6e1347494c31e4678.mockapi.io/allPets/pets'),
@@ -45,9 +52,19 @@ class _PetListScreenState extends State<PetListScreen> {
       if (response.statusCode == 200) {
         setState(() {
           apiPets = json.decode(response.body);
+          isLoadingApi = false;
+        });
+      } else {
+        setState(() {
+          apiError = 'Failed to load data: ${response.statusCode}';
+          isLoadingApi = false;
         });
       }
     } catch (e) {
+      setState(() {
+        apiError = 'Error loading API pets: $e';
+        isLoadingApi = false;
+      });
       print('Error loading API pets: $e');
     }
   }
@@ -84,10 +101,32 @@ class _PetListScreenState extends State<PetListScreen> {
   }
 
   void _deletePet(int index) {
-    setState(() {
-      pets.removeAt(index);
-    });
-    _savePets();
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: Text('Delete Pet'),
+            content: Text(
+              'Are you sure you want to delete ${pets[index].name}?',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () {
+                  setState(() {
+                    pets.removeAt(index);
+                  });
+                  _savePets();
+                  Navigator.pop(context);
+                },
+                child: Text('Delete', style: TextStyle(color: Colors.red)),
+              ),
+            ],
+          ),
+    );
   }
 
   void _duplicateFromApi(dynamic apiPet) {
@@ -106,6 +145,379 @@ class _PetListScreenState extends State<PetListScreen> {
       pets.add(newPet);
     });
     _savePets();
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('${newPet.name} added to your pets!')),
+    );
+  }
+
+  Widget _buildApiPetsSection() {
+    if (isLoadingApi) {
+      return Container(
+        height: 140,
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (apiError.isNotEmpty) {
+      return Container(
+        height: 140,
+        padding: EdgeInsets.all(16),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.error_outline, color: Colors.red),
+            SizedBox(height: 8),
+            Text(
+              'Failed to load pet templates',
+              style: TextStyle(color: Colors.red, fontSize: 14),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: 8),
+            Text(
+              apiError,
+              style: TextStyle(color: Colors.red, fontSize: 12),
+              textAlign: TextAlign.center,
+            ),
+            TextButton(onPressed: _loadApiPets, child: Text('Retry')),
+          ],
+        ),
+      );
+    }
+
+    if (apiPets.isEmpty) {
+      return Container(
+        height: 140,
+        padding: EdgeInsets.all(16),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.pets, color: Colors.grey),
+            SizedBox(height: 8),
+            Text(
+              'No pet templates available',
+              style: TextStyle(color: Colors.grey, fontSize: 14),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Container(
+      height: 180,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: EdgeInsets.all(8.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Pet Templates (${apiPets.length})',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                ),
+                IconButton(
+                  icon: Icon(Icons.refresh),
+                  onPressed: _loadApiPets,
+                  tooltip: 'Refresh templates',
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              padding: EdgeInsets.symmetric(horizontal: 8),
+              itemCount: apiPets.length,
+              itemBuilder: (context, index) {
+                final apiPet = apiPets[index];
+                final String petName =
+                    apiPet['nama']?.toString() ??
+                    apiPet['name']?.toString() ??
+                    'Unknown';
+                return GestureDetector(
+                  onTap: () => _showApiPetDetail(apiPet),
+                  child: Card(
+                    margin: EdgeInsets.only(right: 12, top: 4, bottom: 4),
+                    elevation: 2,
+                    child: Container(
+                      width: 160,
+                      height: 180,
+                      padding: EdgeInsets.all(12),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: [
+                          apiPet['fotoUrl'] != null &&
+                                  apiPet['fotoUrl'].toString().isNotEmpty
+                              ? ClipRRect(
+                                borderRadius: BorderRadius.circular(24),
+                                child: Image.network(
+                                  apiPet['fotoUrl'],
+                                  width: 48,
+                                  height: 48,
+                                  fit: BoxFit.cover,
+                                  errorBuilder:
+                                      (context, error, stackTrace) =>
+                                          CircleAvatar(
+                                            radius: 24,
+                                            child: Icon(Icons.pets, size: 24),
+                                          ),
+                                ),
+                              )
+                              : CircleAvatar(
+                                radius: 24,
+                                child: Icon(Icons.pets, size: 24),
+                              ),
+                          SizedBox(height: 10),
+                          Text(
+                            petName,
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            textAlign: TextAlign.center,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          SizedBox(height: 2),
+                          Text(
+                            apiPet['type']?.toString() ?? 'Unknown',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Colors.grey[600],
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          SizedBox(height: 4),
+                          Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.blue[50],
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              'Tap for details',
+                              style: TextStyle(
+                                fontSize: 9,
+                                color: Colors.blue[700],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showApiPetDetail(dynamic apiPet) {
+    final String petName =
+        apiPet['nama']?.toString() ?? apiPet['name']?.toString() ?? 'Unknown';
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: Text(petName),
+            content: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (apiPet['fotoUrl'] != null &&
+                      apiPet['fotoUrl'].toString().isNotEmpty)
+                    Center(
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(40),
+                        child: Image.network(
+                          apiPet['fotoUrl'],
+                          width: 80,
+                          height: 80,
+                          fit: BoxFit.cover,
+                          errorBuilder:
+                              (context, error, stackTrace) => CircleAvatar(
+                                radius: 40,
+                                child: Icon(Icons.pets, size: 40),
+                              ),
+                        ),
+                      ),
+                    ),
+                  SizedBox(height: 12),
+                  Text('Type: ${apiPet['type']?.toString() ?? '-'}'),
+                  if (apiPet['ras'] != null &&
+                      apiPet['ras'].toString().isNotEmpty)
+                    Text('Breed: ${apiPet['ras']}'),
+                  if (apiPet['umur'] != null)
+                    Text('Age: ${apiPet['umur']} years'),
+                  if (apiPet['catatan'] != null &&
+                      apiPet['catatan'].toString().isNotEmpty)
+                    Text('Notes: ${apiPet['catatan']}'),
+                  if (apiPet['cost'] != null)
+                    Text('Estimated Cost: Rp ${apiPet['cost']}'),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text('Close'),
+              ),
+            ],
+          ),
+    );
+  }
+
+  Widget _buildMyPetsSection() {
+    if (pets.isEmpty) {
+      return Expanded(
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.pets, size: 64, color: Colors.grey[400]),
+              SizedBox(height: 16),
+              Text(
+                'No pets yet',
+                style: TextStyle(fontSize: 18, color: Colors.grey[600]),
+              ),
+              SizedBox(height: 8),
+              Text(
+                'Add your first pet or select from templates above',
+                style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return Expanded(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: EdgeInsets.all(8.0),
+            child: Text(
+              'My Pets (${pets.length})',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
+          ),
+          Expanded(
+            child: ListView.builder(
+              itemCount: pets.length,
+              itemBuilder: (context, index) {
+                final pet = pets[index];
+                final isVaccinationDue =
+                    pet.nextVaccination.difference(DateTime.now()).inDays <= 7;
+                final isBathDue =
+                    pet.nextBath.difference(DateTime.now()).inDays <= 3;
+
+                return Card(
+                  margin: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  elevation: 2,
+                  child: ListTile(
+                    leading: CircleAvatar(
+                      backgroundImage:
+                          pet.fotoUrl != null && pet.fotoUrl!.isNotEmpty
+                              ? NetworkImage(pet.fotoUrl!)
+                              : null,
+                      child:
+                          (pet.fotoUrl == null || pet.fotoUrl!.isEmpty)
+                              ? Text(
+                                pet.name[0].toUpperCase(),
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              )
+                              : null,
+                    ),
+                    title: Row(
+                      children: [
+                        Expanded(child: Text(pet.name)),
+                        if (isVaccinationDue)
+                          Icon(Icons.vaccines, color: Colors.red, size: 16),
+                        if (isBathDue)
+                          Icon(Icons.shower, color: Colors.orange, size: 16),
+                      ],
+                    ),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Type: ${pet.type}'),
+                        if (pet.ras != null && pet.ras!.isNotEmpty)
+                          Text('Breed: ${pet.ras}'),
+                        Text(
+                          'Next Vaccination: ${_formatDate(pet.nextVaccination)}',
+                          style: TextStyle(
+                            color: isVaccinationDue ? Colors.red : null,
+                          ),
+                        ),
+                        Text(
+                          'Next Bath: ${_formatDate(pet.nextBath)}',
+                          style: TextStyle(
+                            color: isBathDue ? Colors.orange : null,
+                          ),
+                        ),
+                        if (pet.estimatedCost > 0)
+                          Text(
+                            'Estimated Cost: Rp ${pet.estimatedCost.toStringAsFixed(0)}',
+                          ),
+                      ],
+                    ),
+                    trailing: PopupMenuButton(
+                      itemBuilder:
+                          (context) => [
+                            PopupMenuItem(
+                              value: 'edit',
+                              child: Row(
+                                children: [
+                                  Icon(Icons.edit, size: 18),
+                                  SizedBox(width: 8),
+                                  Text('Edit'),
+                                ],
+                              ),
+                            ),
+                            PopupMenuItem(
+                              value: 'delete',
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.delete,
+                                    size: 18,
+                                    color: Colors.red,
+                                  ),
+                                  SizedBox(width: 8),
+                                  Text(
+                                    'Delete',
+                                    style: TextStyle(color: Colors.red),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                      onSelected: (value) {
+                        if (value == 'edit') {
+                          _editPet(index);
+                        } else if (value == 'delete') {
+                          _deletePet(index);
+                        }
+                      },
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -113,203 +525,26 @@ class _PetListScreenState extends State<PetListScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Pet Care Reminder'),
+        elevation: 0,
         actions: [
           IconButton(
-            icon: Icon(Icons.cloud_download),
+            icon: Icon(Icons.refresh),
             onPressed: _loadApiPets,
-            tooltip: 'Load API Templates',
+            tooltip: 'Refresh templates',
           ),
         ],
       ),
       body: Column(
         children: [
-          if (apiPets.isNotEmpty) ...[
-            Container(
-              height: 120,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Padding(
-                    padding: EdgeInsets.all(8.0),
-                    child: Text(
-                      'Pet List :',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                  Expanded(
-                    child: ListView.builder(
-                      scrollDirection: Axis.horizontal,
-                      itemCount: apiPets.length,
-                      itemBuilder: (context, index) {
-                        final apiPet = apiPets[index];
-                        return Card(
-                          margin: EdgeInsets.symmetric(horizontal: 4),
-                          child: InkWell(
-                            onTap: () => _duplicateFromApi(apiPet),
-                            child: Container(
-                              width: 120,
-                              padding: EdgeInsets.all(8),
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  apiPet['fotoUrl'] != null &&
-                                          apiPet['fotoUrl']
-                                              .toString()
-                                              .isNotEmpty
-                                      ? CircleAvatar(
-                                        backgroundImage: NetworkImage(
-                                          apiPet['fotoUrl'],
-                                        ),
-                                        radius: 20,
-                                      )
-                                      : Icon(Icons.pets, size: 24),
-                                  SizedBox(height: 4),
-                                  Text(
-                                    apiPet['name'] ?? 'Unknown',
-                                    style: TextStyle(fontSize: 12),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                  Text(
-                                    apiPet['type'] ?? 'Unknown',
-                                    style: TextStyle(
-                                      fontSize: 10,
-                                      color: Colors.grey,
-                                    ),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                  if (apiPet['ras'] != null &&
-                                      apiPet['ras'].toString().isNotEmpty)
-                                    Text(
-                                      apiPet['ras'],
-                                      style: TextStyle(
-                                        fontSize: 10,
-                                        color: Colors.grey,
-                                      ),
-                                      textAlign: TextAlign.center,
-                                    ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Divider(),
-          ],
-          Expanded(
-            child: ListView.builder(
-              itemCount: pets.length + apiPets.length,
-              itemBuilder: (context, index) {
-                if (index < pets.length) {
-                  // Local pets
-                  final pet = pets[index];
-                  return Card(
-                    margin: EdgeInsets.all(8),
-                    child: ListTile(
-                      leading: CircleAvatar(
-                        backgroundImage:
-                            pet.fotoUrl != null && pet.fotoUrl!.isNotEmpty
-                                ? NetworkImage(pet.fotoUrl!)
-                                : null,
-                        child:
-                            (pet.fotoUrl == null || pet.fotoUrl!.isEmpty)
-                                ? Text(pet.name[0].toUpperCase())
-                                : null,
-                      ),
-                      title: Text(pet.name),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Type: ${pet.type}'),
-                          if (pet.ras != null && pet.ras!.isNotEmpty)
-                            Text('Ras: ${pet.ras}'),
-                          if (pet.umur != null) Text('Umur: ${pet.umur} tahun'),
-                          if (pet.catatan != null && pet.catatan!.isNotEmpty)
-                            Text('Catatan: ${pet.catatan}'),
-                          Text(
-                            'Next Vaccination: ${_formatDate(pet.nextVaccination)}',
-                          ),
-                          Text('Next Bath: ${_formatDate(pet.nextBath)}'),
-                          if (pet.estimatedCost > 0)
-                            Text(
-                              'Estimated Cost: Rp ${pet.estimatedCost.toStringAsFixed(0)}',
-                            ),
-                        ],
-                      ),
-                      trailing: PopupMenuButton(
-                        itemBuilder:
-                            (context) => [
-                              PopupMenuItem(value: 'edit', child: Text('Edit')),
-                              PopupMenuItem(
-                                value: 'delete',
-                                child: Text('Delete'),
-                              ),
-                            ],
-                        onSelected: (value) {
-                          if (value == 'edit') {
-                            _editPet(index);
-                          } else if (value == 'delete') {
-                            _deletePet(index);
-                          }
-                        },
-                      ),
-                    ),
-                  );
-                } else {
-                  // API pets
-                  final apiPet = apiPets[index - pets.length];
-                  return Card(
-                    margin: EdgeInsets.all(8),
-                    child: ListTile(
-                      leading: CircleAvatar(
-                        backgroundImage:
-                            (apiPet['fotoUrl'] != null &&
-                                    apiPet['fotoUrl'].toString().isNotEmpty)
-                                ? NetworkImage(apiPet['fotoUrl'])
-                                : null,
-                        child:
-                            (apiPet['fotoUrl'] == null ||
-                                    apiPet['fotoUrl'].toString().isEmpty)
-                                ? Text((apiPet['name'] ?? 'U')[0].toUpperCase())
-                                : null,
-                      ),
-                      title: Text(apiPet['name'] ?? 'Unknown'),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Type: ${apiPet['type'] ?? 'Unknown'}'),
-                          if (apiPet['ras'] != null &&
-                              apiPet['ras'].toString().isNotEmpty)
-                            Text('Ras: ${apiPet['ras']}'),
-                          if (apiPet['umur'] != null)
-                            Text('Umur: ${apiPet['umur']} tahun'),
-                          if (apiPet['catatan'] != null &&
-                              apiPet['catatan'].toString().isNotEmpty)
-                            Text('Catatan: ${apiPet['catatan']}'),
-                          if (apiPet['cost'] != null)
-                            Text('Estimated Cost: Rp ${apiPet['cost']}'),
-                        ],
-                      ),
-                      trailing: IconButton(
-                        icon: Icon(Icons.add),
-                        tooltip: 'Add to My Pets',
-                        onPressed: () => _duplicateFromApi(apiPet),
-                      ),
-                    ),
-                  );
-                }
-              },
-            ),
-          ),
+          _buildApiPetsSection(),
+          Divider(height: 1),
+          _buildMyPetsSection(),
         ],
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _addPet,
         child: Icon(Icons.add),
+        tooltip: 'Add new pet',
       ),
     );
   }
