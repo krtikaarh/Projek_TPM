@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:projek_tpm/models/pet_model.dart';
 import 'package:projek_tpm/screens/pet/pet_form_dialog.dart';
+import 'package:projek_tpm/screens/profile_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
@@ -130,10 +131,15 @@ class _PetListScreenState extends State<PetListScreen> {
   }
 
   void _duplicateFromApi(dynamic apiPet) {
+    // Menggunakan nama dan type dari API dengan fallback
+    final String petName =
+        apiPet['nama']?.toString() ?? apiPet['name']?.toString() ?? 'Unknown';
+    final String petType = apiPet['type']?.toString() ?? 'Unknown';
+
     Pet newPet = Pet(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
-      name: apiPet['name'] ?? 'Unknown',
-      type: apiPet['type'] ?? 'Unknown',
+      name: petName,
+      type: petType,
       lastVaccination: DateTime.now().subtract(Duration(days: 30)),
       nextVaccination: DateTime.now().add(Duration(days: 335)),
       lastBath: DateTime.now().subtract(Duration(days: 7)),
@@ -148,6 +154,14 @@ class _PetListScreenState extends State<PetListScreen> {
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('${newPet.name} added to your pets!')),
+    );
+  }
+
+  // Navigasi ke halaman profile
+  void _navigateToProfile() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => ProfileScreen()),
     );
   }
 
@@ -232,10 +246,15 @@ class _PetListScreenState extends State<PetListScreen> {
               itemCount: apiPets.length,
               itemBuilder: (context, index) {
                 final apiPet = apiPets[index];
-                final String petName =
-                    apiPet['nama']?.toString() ??
-                    apiPet['name']?.toString() ??
-                    'Unknown';
+                // Ambil data sesuai field API
+                final String petName = apiPet['nama']?.toString() ?? 'Unknown';
+                final String petType = apiPet['type']?.toString() ?? '-';
+                final String petRas = apiPet['ras']?.toString() ?? '-';
+                final String petUmur = apiPet['umur']?.toString() ?? '-';
+                final String petCatatan = apiPet['catatan']?.toString() ?? '-';
+                final String petFoto = apiPet['fotoUrl']?.toString() ?? '';
+                final String petCost = apiPet['cost']?.toString() ?? '-';
+
                 return GestureDetector(
                   onTap: () => _showApiPetDetail(apiPet),
                   child: Card(
@@ -248,12 +267,11 @@ class _PetListScreenState extends State<PetListScreen> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.start,
                         children: [
-                          apiPet['fotoUrl'] != null &&
-                                  apiPet['fotoUrl'].toString().isNotEmpty
+                          petFoto.isNotEmpty
                               ? ClipRRect(
                                 borderRadius: BorderRadius.circular(24),
                                 child: Image.network(
-                                  apiPet['fotoUrl'],
+                                  petFoto,
                                   width: 48,
                                   height: 48,
                                   fit: BoxFit.cover,
@@ -282,12 +300,34 @@ class _PetListScreenState extends State<PetListScreen> {
                           ),
                           SizedBox(height: 2),
                           Text(
-                            apiPet['type']?.toString() ?? 'Unknown',
+                            petType,
                             style: TextStyle(
                               fontSize: 11,
                               color: Colors.grey[600],
                             ),
                             textAlign: TextAlign.center,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          SizedBox(height: 2),
+                          Text(
+                            'Ras: $petRas',
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: Colors.grey[500],
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          SizedBox(height: 2),
+                          Text(
+                            'Umur: $petUmur',
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: Colors.grey[500],
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                           SizedBox(height: 4),
                           Container(
@@ -321,57 +361,55 @@ class _PetListScreenState extends State<PetListScreen> {
   }
 
   void _showApiPetDetail(dynamic apiPet) {
-    final String petName =
-        apiPet['nama']?.toString() ?? apiPet['name']?.toString() ?? 'Unknown';
+    // Ambil data sesuai field API
+    final String petName = apiPet['nama']?.toString() ?? 'Unknown';
+    final String petType = apiPet['type']?.toString() ?? '-';
+    final String petRas = apiPet['ras']?.toString() ?? '-';
+    final String petUmur = apiPet['umur']?.toString() ?? '-';
+    final String petCatatan = apiPet['catatan']?.toString() ?? '-';
+    final String petFoto = apiPet['fotoUrl']?.toString() ?? '';
+    final String petCost = apiPet['cost']?.toString() ?? '-';
+
     showDialog(
       context: context,
-      builder:
-          (context) => AlertDialog(
-            title: Text(petName),
-            content: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (apiPet['fotoUrl'] != null &&
-                      apiPet['fotoUrl'].toString().isNotEmpty)
-                    Center(
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(40),
-                        child: Image.network(
-                          apiPet['fotoUrl'],
-                          width: 80,
-                          height: 80,
-                          fit: BoxFit.cover,
-                          errorBuilder:
-                              (context, error, stackTrace) => CircleAvatar(
-                                radius: 40,
-                                child: Icon(Icons.pets, size: 40),
-                              ),
-                        ),
+      builder: (context) => AlertDialog(
+        title: Text(petName),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (petFoto.isNotEmpty)
+                Center(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(40),
+                    child: Image.network(
+                      petFoto,
+                      width: 80,
+                      height: 80,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) => CircleAvatar(
+                        radius: 40,
+                        child: Icon(Icons.pets, size: 40),
                       ),
                     ),
-                  SizedBox(height: 12),
-                  Text('Type: ${apiPet['type']?.toString() ?? '-'}'),
-                  if (apiPet['ras'] != null &&
-                      apiPet['ras'].toString().isNotEmpty)
-                    Text('Breed: ${apiPet['ras']}'),
-                  if (apiPet['umur'] != null)
-                    Text('Age: ${apiPet['umur']} years'),
-                  if (apiPet['catatan'] != null &&
-                      apiPet['catatan'].toString().isNotEmpty)
-                    Text('Notes: ${apiPet['catatan']}'),
-                  if (apiPet['cost'] != null)
-                    Text('Estimated Cost: Rp ${apiPet['cost']}'),
-                ],
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text('Close'),
-              ),
+                  ),
+                ),
+              SizedBox(height: 12),
+              Text('Type: $petType'),
+              Text('Breed: $petRas'),
+              Text('Age: $petUmur years'),
+              Text('Notes: $petCatatan'),
+              Text('Estimated Cost: Rp $petCost'),
             ],
           ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Close'),
+          ),
+        ],
+      ),
     );
   }
 
@@ -528,9 +566,9 @@ class _PetListScreenState extends State<PetListScreen> {
         elevation: 0,
         actions: [
           IconButton(
-            icon: Icon(Icons.refresh),
-            onPressed: _loadApiPets,
-            tooltip: 'Refresh templates',
+            icon: Icon(Icons.person), // Ganti dari refresh ke profile icon
+            onPressed: _navigateToProfile, // Navigasi ke halaman profile
+            tooltip: 'Profile',
           ),
         ],
       ),

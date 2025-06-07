@@ -45,7 +45,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
   @override
   void initState() {
     super.initState();
-    tz.initializeTimeZones(); // Inisialisasi timezone
+    tz.initializeTimeZones();
     _initializeNotifications();
     _loadSettings();
     _loadPets();
@@ -88,7 +88,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
   ) async {
     if (!notificationsEnabled) return;
 
-    const AndroidNotificationDetails androidPlatformChannelSpecifics =
+    const AndroidNotificationDetails androidDetails =
         AndroidNotificationDetails(
           'pet_care_channel',
           'Pet Care Reminders',
@@ -97,17 +97,16 @@ class _NotificationScreenState extends State<NotificationScreen> {
           priority: Priority.high,
         );
 
-    const NotificationDetails platformChannelSpecifics = NotificationDetails(
-      android: androidPlatformChannelSpecifics,
+    const NotificationDetails platformDetails = NotificationDetails(
+      android: androidDetails,
     );
 
-    // Gunakan timezone package untuk zonedSchedule
     await flutterLocalNotificationsPlugin.zonedSchedule(
       0,
       title,
       body,
       tz.TZDateTime.from(scheduledTime, tz.local),
-      platformChannelSpecifics,
+      platformDetails,
       androidAllowWhileIdle: true,
       uiLocalNotificationDateInterpretation:
           UILocalNotificationDateInterpretation.absoluteTime,
@@ -118,7 +117,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
   Future<void> _showImmediateNotification() async {
     if (!notificationsEnabled) return;
 
-    const AndroidNotificationDetails androidPlatformChannelSpecifics =
+    const AndroidNotificationDetails androidDetails =
         AndroidNotificationDetails(
           'pet_care_channel',
           'Pet Care Reminders',
@@ -127,15 +126,15 @@ class _NotificationScreenState extends State<NotificationScreen> {
           priority: Priority.high,
         );
 
-    const NotificationDetails platformChannelSpecifics = NotificationDetails(
-      android: androidPlatformChannelSpecifics,
+    const NotificationDetails platformDetails = NotificationDetails(
+      android: androidDetails,
     );
 
     await flutterLocalNotificationsPlugin.show(
       1,
       'Pet Care Reminder Test',
-      'This is a test notification for your pet care app!',
-      platformChannelSpecifics,
+      'This is a test notification!',
+      platformDetails,
     );
   }
 
@@ -144,7 +143,6 @@ class _NotificationScreenState extends State<NotificationScreen> {
     DateTime now = DateTime.now();
 
     for (Pet pet in pets) {
-      // Check vaccination
       if (pet.nextVaccination.isAfter(now)) {
         int daysUntil = pet.nextVaccination.difference(now).inDays;
         reminders.add(
@@ -162,7 +160,6 @@ class _NotificationScreenState extends State<NotificationScreen> {
         );
       }
 
-      // Check bath
       if (pet.nextBath.isAfter(now)) {
         int daysUntil = pet.nextBath.difference(now).inDays;
         reminders.add(
@@ -186,66 +183,63 @@ class _NotificationScreenState extends State<NotificationScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text('Notifications')),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            Card(
-              margin: EdgeInsets.all(8),
-              child: SwitchListTile(
-                title: Text('Enable Notifications'),
-                subtitle: Text('Receive reminders for pet care'),
-                value: notificationsEnabled,
-                onChanged: (value) {
-                  setState(() {
-                    notificationsEnabled = value;
-                  });
-                  _saveSettings();
-                },
+    // Jangan tampilkan AppBar di sini, biarkan HomeScreen yang menampilkan AppBar dan BottomNavigationBar
+    return SingleChildScrollView(
+      child: Column(
+        children: [
+          Card(
+            margin: EdgeInsets.all(8),
+            child: SwitchListTile(
+              title: Text('Enable Notifications'),
+              subtitle: Text('Receive reminders for pet care'),
+              value: notificationsEnabled,
+              onChanged: (value) {
+                setState(() {
+                  notificationsEnabled = value;
+                });
+                _saveSettings();
+              },
+            ),
+          ),
+          Card(
+            margin: EdgeInsets.all(8),
+            child: ListTile(
+              title: Text('Test Notification'),
+              subtitle: Text('Send a test notification now'),
+              trailing: ElevatedButton(
+                onPressed: _showImmediateNotification,
+                child: Text('Test'),
               ),
             ),
-            Card(
-              margin: EdgeInsets.all(8),
-              child: ListTile(
-                title: Text('Test Notification'),
-                subtitle: Text('Send a test notification now'),
-                trailing: ElevatedButton(
-                  onPressed: _showImmediateNotification,
-                  child: Text('Test'),
-                ),
-              ),
+          ),
+          Padding(
+            padding: EdgeInsets.all(16),
+            child: Text(
+              'Upcoming Reminders',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
-            Padding(
-              padding: EdgeInsets.all(16),
-              child: Text(
-                'Upcoming Reminders',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-            ),
-            Container(
-              height:
-                  300, // Atur tinggi agar ListView bisa tampil di dalam SingleChildScrollView
-              child:
-                  _getUpcomingReminders().isEmpty
-                      ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.notifications_off,
-                              size: 64,
-                              color: Colors.grey,
-                            ),
-                            Text('No upcoming reminders'),
-                            Text('Add pets to see reminders here'),
-                          ],
-                        ),
-                      )
-                      : ListView(children: _getUpcomingReminders()),
-            ),
-          ],
-        ),
+          ),
+          Container(
+            height: 300,
+            child:
+                _getUpcomingReminders().isEmpty
+                    ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.notifications_off,
+                            size: 64,
+                            color: Colors.grey,
+                          ),
+                          Text('No upcoming reminders'),
+                          Text('Add pets to see reminders here'),
+                        ],
+                      ),
+                    )
+                    : ListView(children: _getUpcomingReminders()),
+          ),
+        ],
       ),
     );
   }

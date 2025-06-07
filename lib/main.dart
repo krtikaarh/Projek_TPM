@@ -8,13 +8,13 @@ import 'dart:convert';
 import 'dart:math';
 import 'dart:async';
 
-// Tambahkan import untuk semua screen yang digunakan
 import 'screens/pet/pet_list_screen.dart';
 import 'screens/notification/notification_screen.dart';
 import 'screens/time/time_converter_screen.dart';
 import 'screens/currency/currency_converter_screen.dart';
 import 'screens/location/location_screen.dart';
 import 'screens/sensor/sensor_screen.dart';
+import 'screens/login_screen.dart'; 
 
 void main() {
   runApp(PetCareApp());
@@ -29,7 +29,7 @@ class PetCareApp extends StatelessWidget {
         primarySwatch: Colors.blue,
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      home: MainScreen(),
+      home: LoginScreen(), 
       debugShowCheckedModeBanner: false,
     );
   }

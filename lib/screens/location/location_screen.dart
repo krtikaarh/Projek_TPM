@@ -137,164 +137,154 @@ class _LocationScreenState extends State<LocationScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Nearby Clinics'),
-        actions: [
-          IconButton(icon: Icon(Icons.refresh), onPressed: _getCurrentLocation),
-        ],
-      ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            Card(
-              margin: EdgeInsets.all(8),
-              child: Padding(
-                padding: EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Current Location',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    SizedBox(height: 8),
-                    if (isLoading)
-                      Row(
-                        children: [
-                          SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          ),
-                          SizedBox(width: 8),
-                          Text(locationStatus),
-                        ],
-                      )
-                    else if (currentPosition != null)
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Status: $locationStatus'),
-                          Text(
-                            'Latitude: ${currentPosition!.latitude.toStringAsFixed(6)}',
-                          ),
-                          Text(
-                            'Longitude: ${currentPosition!.longitude.toStringAsFixed(6)}',
-                          ),
-                          Text(
-                            'Accuracy: ${currentPosition!.accuracy.toStringAsFixed(1)}m',
-                          ),
-                        ],
-                      )
-                    else
-                      Text(locationStatus),
-                  ],
-                ),
-              ),
-            ),
-            Padding(
+    // Jangan tampilkan AppBar di sini, biarkan HomeScreen yang menampilkan AppBar dan BottomNavigationBar
+    return SingleChildScrollView(
+      child: Column(
+        children: [
+          Card(
+            margin: EdgeInsets.all(8),
+            child: Padding(
               padding: EdgeInsets.all(16),
-              child: Text(
-                'Nearest Veterinary Clinics',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Current Location',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  SizedBox(height: 8),
+                  if (isLoading)
+                    Row(
+                      children: [
+                        SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                        SizedBox(width: 8),
+                        Text(locationStatus),
+                      ],
+                    )
+                  else if (currentPosition != null)
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Status: $locationStatus'),
+                        Text(
+                          'Latitude: ${currentPosition!.latitude.toStringAsFixed(6)}',
+                        ),
+                        Text(
+                          'Longitude: ${currentPosition!.longitude.toStringAsFixed(6)}',
+                        ),
+                        Text(
+                          'Accuracy: ${currentPosition!.accuracy.toStringAsFixed(1)}m',
+                        ),
+                      ],
+                    )
+                  else
+                    Text(locationStatus),
+                ],
               ),
             ),
-            Container(
-              height:
-                  400, // Atur tinggi agar ListView bisa tampil di dalam SingleChildScrollView
-              child:
-                  currentPosition == null
-                      ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.location_off,
-                              size: 64,
-                              color: Colors.grey,
-                            ),
-                            Text('Location not available'),
-                            SizedBox(height: 8),
-                            ElevatedButton(
-                              onPressed: _getCurrentLocation,
-                              child: Text('Get Location'),
-                            ),
-                          ],
-                        ),
-                      )
-                      : ListView.builder(
-                        itemCount: _getNearestClinics().length,
-                        itemBuilder: (context, index) {
-                          final clinic = _getNearestClinics()[index];
-                          return Card(
-                            margin: EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            child: ListTile(
-                              leading: CircleAvatar(
-                                backgroundColor: Colors.red[100],
-                                child: Icon(
-                                  Icons.local_hospital,
-                                  color: Colors.red,
-                                ),
-                              ),
-                              title: Text(clinic['name']),
-                              subtitle: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(clinic['address']),
-                                  SizedBox(height: 4),
-                                  Row(
-                                    children: [
-                                      Icon(
-                                        Icons.star,
-                                        size: 16,
-                                        color: Colors.orange,
-                                      ),
-                                      Text(' ${clinic['rating']}'),
-                                      SizedBox(width: 16),
-                                      Icon(
-                                        Icons.phone,
-                                        size: 16,
-                                        color: Colors.green,
-                                      ),
-                                      Text(' ${clinic['phone']}'),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                              trailing: Container(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 4,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.blue[100],
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Text(
-                                  '${clinic['distance'].toStringAsFixed(1)} km',
-                                  style: TextStyle(
-                                    color: Colors.blue[800],
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                              onTap: () {
-                                _showClinicDetails(clinic);
-                              },
-                            ),
-                          );
-                        },
-                      ),
+          ),
+          Padding(
+            padding: EdgeInsets.all(16),
+            child: Text(
+              'Nearest Veterinary Clinics',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
-          ],
-        ),
+          ),
+          Container(
+            height:
+                400, // Atur tinggi agar ListView bisa tampil di dalam SingleChildScrollView
+            child:
+                currentPosition == null
+                    ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.location_off,
+                            size: 64,
+                            color: Colors.grey,
+                          ),
+                          Text('Location not available'),
+                          SizedBox(height: 8),
+                          ElevatedButton(
+                            onPressed: _getCurrentLocation,
+                            child: Text('Get Location'),
+                          ),
+                        ],
+                      ),
+                    )
+                    : ListView.builder(
+                      itemCount: _getNearestClinics().length,
+                      itemBuilder: (context, index) {
+                        final clinic = _getNearestClinics()[index];
+                        return Card(
+                          margin: EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          child: ListTile(
+                            leading: CircleAvatar(
+                              backgroundColor: Colors.red[100],
+                              child: Icon(
+                                Icons.local_hospital,
+                                color: Colors.red,
+                              ),
+                            ),
+                            title: Text(clinic['name']),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(clinic['address']),
+                                SizedBox(height: 4),
+                                Row(
+                                  children: [
+                                    Icon(
+                                      Icons.star,
+                                      size: 16,
+                                      color: Colors.orange,
+                                    ),
+                                    Text(' ${clinic['rating']}'),
+                                    SizedBox(width: 16),
+                                    Icon(
+                                      Icons.phone,
+                                      size: 16,
+                                      color: Colors.green,
+                                    ),
+                                    Text(' ${clinic['phone']}'),
+                                  ],
+                                ),
+                              ],
+                            ),
+                            trailing: Container(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.blue[100],
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                '${clinic['distance'].toStringAsFixed(1)} km',
+                                style: TextStyle(
+                                  color: Colors.blue[800],
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                            onTap: () {
+                              _showClinicDetails(clinic);
+                            },
+                          ),
+                        );
+                      },
+                    ),
+          ),
+        ],
       ),
     );
   }
