@@ -8,6 +8,14 @@ import 'dart:convert';
 import 'dart:math';
 import 'dart:async';
 
+// Tambahkan import untuk semua screen yang digunakan
+import 'screens/pet/pet_list_screen.dart';
+import 'screens/notification/notification_screen.dart';
+import 'screens/time/time_converter_screen.dart';
+import 'screens/currency/currency_converter_screen.dart';
+import 'screens/location/location_screen.dart';
+import 'screens/sensor/sensor_screen.dart';
+
 void main() {
   runApp(PetCareApp());
 }
@@ -59,10 +67,19 @@ class _MainScreenState extends State<MainScreen> {
         type: BottomNavigationBarType.fixed,
         items: [
           BottomNavigationBarItem(icon: Icon(Icons.pets), label: 'Pets'),
-          BottomNavigationBarItem(icon: Icon(Icons.notifications), label: 'Notifications'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.notifications),
+            label: 'Notifications',
+          ),
           BottomNavigationBarItem(icon: Icon(Icons.access_time), label: 'Time'),
-          BottomNavigationBarItem(icon: Icon(Icons.monetization_on), label: 'Currency'),
-          BottomNavigationBarItem(icon: Icon(Icons.location_on), label: 'Location'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.monetization_on),
+            label: 'Currency',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.location_on),
+            label: 'Location',
+          ),
           BottomNavigationBarItem(icon: Icon(Icons.sensors), label: 'Sensor'),
         ],
       ),
