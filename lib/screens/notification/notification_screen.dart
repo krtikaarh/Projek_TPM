@@ -183,7 +183,6 @@ class _NotificationScreenState extends State<NotificationScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Jangan tampilkan AppBar di sini, biarkan HomeScreen yang menampilkan AppBar dan BottomNavigationBar
     return SingleChildScrollView(
       child: Column(
         children: [
