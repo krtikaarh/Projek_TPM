@@ -137,7 +137,6 @@ class _LocationScreenState extends State<LocationScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Jangan tampilkan AppBar di sini, biarkan HomeScreen yang menampilkan AppBar dan BottomNavigationBar
     return SingleChildScrollView(
       child: Column(
         children: [
@@ -318,7 +317,6 @@ class _LocationScreenState extends State<LocationScreen> {
               TextButton(
                 onPressed: () {
                   Navigator.pop(context);
-                  // In a real app, you would open maps app here
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(

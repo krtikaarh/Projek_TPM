@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:projek_tpm/screens/MainScreen.dart';
 import 'package:projek_tpm/screens/register_screen.dart';
 import 'package:projek_tpm/services/auth_service.dart';
 import 'package:projek_tpm/screens/pet/pet_list_screen.dart';
@@ -39,7 +40,7 @@ class _LoginScreenState extends State<LoginScreen> {
         // Login berhasil, navigasi ke halaman utama
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => PetListScreen()),
+          MaterialPageRoute(builder: (context) => MainScreen()),
         );
       } else {
         // Login gagal, tampilkan pesan error

@@ -566,7 +566,7 @@ class _PetListScreenState extends State<PetListScreen> {
         elevation: 0,
         actions: [
           IconButton(
-            icon: Icon(Icons.person), // Ganti dari refresh ke profile icon
+            icon: Icon(Icons.person), 
             onPressed: _navigateToProfile, // Navigasi ke halaman profile
             tooltip: 'Profile',
           ),
@@ -591,3 +591,4 @@ class _PetListScreenState extends State<PetListScreen> {
     return '${date.day}/${date.month}/${date.year}';
   }
 }
+
